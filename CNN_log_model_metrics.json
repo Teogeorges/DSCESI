@@ -526,7 +526,8 @@
         "precision": 0.7893772190811167,
         "recall": 0.7776707214259906,
         "f1_score": 0.7776518487336261
-    },{
+    },
+    {
         "data_dir": "Dataset 1v4",
         "num_classes": 2,
         "image_height": 180,
@@ -1053,5 +1054,27 @@
         "precision": 0.8777690340601673,
         "recall": 0.880525111405516,
         "f1_score": 0.8731446257350501
+    },
+    {
+        "data_dir": "Dataset",
+        "num_classes": 5,
+        "image_height": 180,
+        "image_width": 180,
+        "batch_size": 16,
+        "validation_split": 0.4,
+        "dropout": 0.2,
+        "activation": "softmax",
+        "optimizer": "adam",
+        "epochs": 20,
+        "epochs_range": 20,
+        "test_accuracy": 0.9131169319152832,
+        "test_loss": 0.24484112858772278,
+        "accuracy_history": 0.9158178567886353,
+        "val_accuracy_history": 0.9063104391098022,
+        "loss_history": 0.22339226305484772,
+        "val_loss_history": 0.26136159896850586,
+        "precision": 0.9162268378813128,
+        "recall": 0.9131169301315313,
+        "f1_score": 0.9137019448796041
     }
 ]
