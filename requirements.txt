@@ -1,8 +1,0 @@
-matplotlib
-numpy
-Pillow
-tensorflow==2.15.0
-visualkeras
-scikit-learn
-json
-seaborn
