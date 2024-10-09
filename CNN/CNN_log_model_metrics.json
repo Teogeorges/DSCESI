@@ -1076,5 +1076,27 @@
         "precision": 0.9162268378813128,
         "recall": 0.9131169301315313,
         "f1_score": 0.9137019448796041
+    },
+    {
+        "data_dir": "Dataset",
+        "num_classes": 5,
+        "image_height": 180,
+        "image_width": 180,
+        "batch_size": 16,
+        "validation_split": 0.4,
+        "dropout": 0.2,
+        "activation": "softmax",
+        "optimizer": "adam",
+        "epochs": 20,
+        "epochs_range": 20,
+        "test_accuracy": 0.9146856665611267,
+        "test_loss": 0.23226402699947357,
+        "accuracy_history": 0.9208905100822449,
+        "val_accuracy_history": 0.9128385186195374,
+        "loss_history": 0.2115243822336197,
+        "val_loss_history": 0.2381332367658615,
+        "precision": 0.9185983421984036,
+        "recall": 0.9146856522263787,
+        "f1_score": 0.914904954149666
     }
 ]
