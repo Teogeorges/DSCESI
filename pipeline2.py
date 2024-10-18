@@ -12,7 +12,7 @@ from PIL import Image as PILImage
 
 st.set_page_config(
     page_title="TouNum",  # Titre de l'onglet
-    page_icon="📊",  # Icône de l'onglet (optionnel)
+    page_icon="🤖",  # Icône de l'onglet (optionnel)
 )
 
 class CNN_Encoder(tf.keras.Model):
