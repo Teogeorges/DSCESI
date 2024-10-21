@@ -13,6 +13,7 @@ from PIL import Image as PILImage
 st.set_page_config(
     page_title="TouNum",  # Titre de l'onglet
     page_icon="🤖",  # Icône de l'onglet (optionnel)
+    initial_sidebar_state="collapsed"  # Barre latérale désactivée par défaut
 )
 
 class CNN_Encoder(tf.keras.Model):
@@ -72,7 +73,7 @@ def load_image(image_path):
     return img, image_path
 
 def plot_attention(image, result, attention_plot):
-    temp_image = np.array(Image.open(image))
+    temp_image = np.array(PILImage.open(image))
     fig = plt.figure(figsize=(10, 10))
     len_result = len(result)
     for l in range(len_result):
@@ -104,24 +105,12 @@ def evaluate(image):
     attention_plot = attention_plot[:len(result), :]
     return result, attention_plot
 
-def predict_image_classification(image_path, model_cnn, data_cat, img_height, img_width):
-    image_load = tf.keras.utils.load_img(image_path, target_size=(img_height, img_width))
-    img_arr = tf.keras.utils.img_to_array(image_load)
-    img_bat = tf.expand_dims(img_arr, 0)
-    predict = model_cnn.predict(img_bat)
-    score = tf.nn.softmax(predict)
-    return data_cat[np.argmax(score)]
-
-def unblured_image(image_path, autoencoder_model, img_height, img_width):
-    image_load = tf.keras.utils.load_img(image_path, target_size=(img_height, img_width))
-    img_arr = tf.keras.utils.img_to_array(image_load)/255.0
-    img_bat = tf.expand_dims(img_arr, 0)
-    image_debruitee = autoencoder_model.predict(img_bat)[0]
-    return image_debruitee
-
 @st.cache_resource
-def load_models():
-    model_cnn = load_model('CNN/Save model2/CNN_Dataset_Model24_K3x3_IM180x180_B16_VS40_DO20_ACTsoftmax_OPTadam_E20.keras', compile=False)
+def load_models(classification_type):
+    if classification_type == "Multiclasse":
+        model_cnn = load_model('CNN/Save model2/CNN_Dataset_Model24_K3x3_IM180x180_B16_VS40_DO20_ACTsoftmax_OPTadam_E20.keras', compile=False)
+    else:
+        model_cnn = load_model('CNN/Save model2/CNN_Dataset 1v4_Model2_K3x3_IM180x180_B16_VS40_DO20_ACTsigmoid_OPTadam_E10.keras', compile=False)
     
     encoder = CNN_Encoder(embedding_dim)
     decoder = RNN_Decoder(embedding_dim, units, vocab_size)
@@ -144,8 +133,28 @@ def load_models():
     
     return model_cnn, encoder, decoder, image_features_extract_model, tokenizer
 
-def process_image(image_path, use_autoencoder, _autoencoder_model=None):
-    class_image = predict_image_classification(image_path, model_cnn, data_cat, img_height, img_width)
+def predict_image_classification(image_path, model_cnn, data_cat, img_height, img_width, classification_type):
+    image_load = tf.keras.utils.load_img(image_path, target_size=(img_height, img_width))
+    img_arr = tf.keras.utils.img_to_array(image_load)
+    img_bat = tf.expand_dims(img_arr, 0)
+    predict = model_cnn.predict(img_bat)
+    
+    if classification_type == "Multiclasse":
+        score = tf.nn.softmax(predict)
+        return data_cat[np.argmax(score)]
+    else:
+        score = tf.nn.softmax(predict)
+        return data_cat[np.argmax(score)]
+
+def unblured_image(image_path, autoencoder_model, img_height, img_width):
+    image_load = tf.keras.utils.load_img(image_path, target_size=(img_height, img_width))
+    img_arr = tf.keras.utils.img_to_array(image_load)/255.0
+    img_bat = tf.expand_dims(img_arr, 0)
+    image_debruitee = autoencoder_model.predict(img_bat)[0]
+    return image_debruitee
+
+def process_image(image_path, use_autoencoder, _autoencoder_model, classification_type):
+    class_image = predict_image_classification(image_path, model_cnn, data_cat, img_height, img_width, classification_type)
     
     result = None
     image_debruitee = None
@@ -165,7 +174,21 @@ def process_image(image_path, use_autoencoder, _autoencoder_model=None):
     
     return class_image, image_debruitee, original_img, result
 
-st.markdown("<h1 style='text-align: center;'>Modèle de Classification d'Images</h1>", unsafe_allow_html=True)
+# Configuration de la barre latérale
+with st.sidebar:
+    st.markdown("<h1 style='text-align: center; font-size: 3em;'>TouNum ⚙️</h1>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.title("Paramètres")
+    classification_type = st.radio("Type de classification", ["Multiclasse", "Binaire"], index=0)
+    use_autoencoder = st.toggle('Activer l\'autoencodeur', value=False)
+
+
+# st.image("toutnum logo.png", use_column_width=True)
+st.markdown("<h1 style='text-align: center; font-size: 5em;'>🤖 TouNum</h1>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center;'>L'intelligence artificielle au service de votre patrimoine numérique!</h2>", unsafe_allow_html=True)
+st.markdown("Made by: `HAIK`, `HUGO` et `TÉO`!", unsafe_allow_html=True)
+st.markdown("---")
+st.markdown("<h2 style='text-align: center;'> L'outil qui permet de classer vos images ainsi que de générer une description !</h2>", unsafe_allow_html=True)
 
 embedding_dim = 256
 units = 512
@@ -176,15 +199,15 @@ attention_features_shape = 64
 img_height = 180
 img_width = 180
 
-model_cnn, encoder, decoder, image_features_extract_model, tokenizer = load_models()
+model_cnn, encoder, decoder, image_features_extract_model, tokenizer = load_models(classification_type)
 
-data_cat = ["Painting", "Photo", "Schematics", "Sketch", "Text"]
+if classification_type == "Multiclasse":
+    data_cat = ["Painting", "Photo", "Schematics", "Sketch", "Text"]
+else:  
+    data_cat = ["Other", "Photo"]
 
 image_files = os.listdir('Data pipeline')
 selected_images = st.multiselect('Sélectionnez une ou plusieurs images', image_files)
-
-use_autoencoder = st.toggle('Activer l\'autoencodeur')
-
 
 if st.button('LOAD'):
     if selected_images:
@@ -195,21 +218,16 @@ if st.button('LOAD'):
         for image in selected_images:
             image_path = os.path.join('Data pipeline', image)
             
-            class_image, image_debruitee, original_img, result = process_image(image_path, use_autoencoder, _autoencoder_model=autoencoder_model) 
+            class_image, image_debruitee, original_img, result = process_image(image_path, use_autoencoder, _autoencoder_model=autoencoder_model, classification_type=classification_type) 
             
             st.subheader(image)
             st.image(original_img, use_column_width='always', caption='Image originale')
             st.write(f'La catégorie de l\'image est : **{class_image}**.')
-            if class_image == 'Photo':
-                if use_autoencoder and image_debruitee is not None:
-                    st.image(image_debruitee, use_column_width='always', caption='Image débruitée')
+            if class_image == 'Photo' and use_autoencoder and image_debruitee is not None:
+                st.image(image_debruitee, use_column_width='always', caption='Image débruitée')
             caption = ' '.join(result).capitalize() + '.'
             st.image(original_img, caption=caption, use_column_width='always')
-                # else:
-                    # caption = ' '.join(result).capitalize() + '.'
-                    # st.image(original_img, caption=caption, use_column_width='always')
-                
+            
             st.markdown("---")
-
     else:
         st.warning('Veuillez sélectionner au moins une image avant de cliquer sur LOAD.')
