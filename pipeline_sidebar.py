@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import json
 from PIL import Image as PILImage
+from transformers import BlipProcessor, BlipForConditionalGeneration
 
 st.set_page_config(
     page_title="TouNum",  # Titre de l'onglet
@@ -153,7 +154,8 @@ def unblured_image(image_path, autoencoder_model, img_height, img_width):
     image_debruitee = autoencoder_model.predict(img_bat)[0]
     return image_debruitee
 
-def process_image(image_path, use_autoencoder, _autoencoder_model, classification_type):
+
+def process_image(image_path, use_autoencoder, _autoencoder_model, classification_type, captioning_model):
     class_image = predict_image_classification(image_path, model_cnn, data_cat, img_height, img_width, classification_type)
     
     result = None
@@ -164,28 +166,43 @@ def process_image(image_path, use_autoencoder, _autoencoder_model, classificatio
     
     original_img = PILImage.open(image_path)
     
-    tf_img = tf.keras.preprocessing.image.load_img(image_path, target_size=(299, 299))
-    tf_img = tf.keras.preprocessing.image.img_to_array(tf_img)
-    tf_img = tf.keras.applications.inception_v3.preprocess_input(tf_img)
-    tf_img = tf.expand_dims(tf_img, 0)
-    
-    result, _ = evaluate(image_path)
-    result = [word for word in result if word not in ('<start>', '<end>', '<unk>')]
+    if captioning_model == "TensorFlow":
+        tf_img = tf.keras.preprocessing.image.load_img(image_path, target_size=(299, 299))
+        tf_img = tf.keras.preprocessing.image.img_to_array(tf_img)
+        tf_img = tf.keras.applications.inception_v3.preprocess_input(tf_img)
+        tf_img = tf.expand_dims(tf_img, 0)
+        
+        result, _ = evaluate(image_path)
+        result = [word for word in result if word not in ('<start>', '<end>', '<unk>')]
+    else:  # PyTorch
+        raw_image = PILImage.open(image_path).convert('RGB')
+        inputs = processor(raw_image, return_tensors="pt")
+        out = model.generate(**inputs)
+        result = processor.decode(out[0], skip_special_tokens=True)
     
     return class_image, image_debruitee, original_img, result
 
+@st.cache_resource
+def load_pytorch_model():
+    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
+    model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
+    return processor, model
+
+
+
 # Configuration de la barre latérale
 with st.sidebar:
-    st.markdown("<h1 style='text-align: center; font-size: 3em;'>TouNum ⚙️</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; font-size: 2em;'>Paramètres ⚙️</h1>", unsafe_allow_html=True)
     st.markdown("---")
-    st.title("Paramètres")
     classification_type = st.radio("Type de classification", ["Multiclasse", "Binaire"], index=0)
     use_autoencoder = st.toggle('Activer l\'autoencodeur', value=False)
+    captioning_model = st.radio("Modèle d'étiquetage", ["PyTorch", "TensorFlow"], index=0)
 
 
 # st.image("toutnum logo.png", use_column_width=True)
 st.markdown("<h1 style='text-align: center; font-size: 5em;'>🤖 TouNum</h1>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center;'>L'intelligence artificielle au service de votre patrimoine numérique!</h2>", unsafe_allow_html=True)
+# st.divider()t le
 st.markdown("Made by: `HAIK`, `HUGO` et `TÉO`!", unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("<h2 style='text-align: center;'> L'outil qui permet de classer vos images ainsi que de générer une description !</h2>", unsafe_allow_html=True)
@@ -200,6 +217,8 @@ img_height = 180
 img_width = 180
 
 model_cnn, encoder, decoder, image_features_extract_model, tokenizer = load_models(classification_type)
+autoencoder_model = load_model('Auto encodeur/autoencoder_model_0_015_040_pipeline.keras', compile=False)
+processor, model = load_pytorch_model()
 
 if classification_type == "Multiclasse":
     data_cat = ["Painting", "Photo", "Schematics", "Sketch", "Text"]
@@ -211,23 +230,32 @@ selected_images = st.multiselect('Sélectionnez une ou plusieurs images', image_
 
 if st.button('LOAD'):
     if selected_images:
-        autoencoder_model = None
-        if use_autoencoder:
-            autoencoder_model = load_model('Auto encodeur/autoencoder_model_0_015_040_pipeline.keras', compile=False)
+        with st.spinner('Chargement en cours...'):
+
+            # autoencoder_model = None
+            # if use_autoencoder:
+                
+            
+            # if captioning_model == "PyTorch":
+            
+            for image in selected_images:
+                image_path = os.path.join('Data pipeline', image)
+                
+                class_image, image_debruitee, original_img, result = process_image(image_path, use_autoencoder, _autoencoder_model=autoencoder_model, classification_type=classification_type, captioning_model=captioning_model) 
+                
+                st.subheader(image)
+                st.image(original_img, use_column_width='always', caption='Image originale')
+                st.write(f'La catégorie de l\'image est : **{class_image}**.')
+                if use_autoencoder and image_debruitee is not None and class_image == 'Photo':
+                    caption = result if captioning_model == "PyTorch" else ' '.join(result).capitalize() + '.'
+                    st.image(image_debruitee, use_column_width='always', caption='Image débruitée')
+                    st.write(f"<u>Description de l'image originale</u> : {caption}", unsafe_allow_html=True)
+                else:
+                    caption = result if captioning_model == "PyTorch" else ' '.join(result).capitalize() + '.'
+                    st.write(f"<u>Description de l'image originale</u> : {caption}", unsafe_allow_html=True)
+                
+                st.markdown("---")
+                
         
-        for image in selected_images:
-            image_path = os.path.join('Data pipeline', image)
-            
-            class_image, image_debruitee, original_img, result = process_image(image_path, use_autoencoder, _autoencoder_model=autoencoder_model, classification_type=classification_type) 
-            
-            st.subheader(image)
-            st.image(original_img, use_column_width='always', caption='Image originale')
-            st.write(f'La catégorie de l\'image est : **{class_image}**.')
-            if class_image == 'Photo' and use_autoencoder and image_debruitee is not None:
-                st.image(image_debruitee, use_column_width='always', caption='Image débruitée')
-            caption = ' '.join(result).capitalize() + '.'
-            st.image(original_img, caption=caption, use_column_width='always')
-            
-            st.markdown("---")
     else:
         st.warning('Veuillez sélectionner au moins une image avant de cliquer sur LOAD.')
