@@ -111,9 +111,9 @@ def evaluate(image):
 @st.cache_resource
 def load_models(classification_type):
     if classification_type == "Multiclasse":
-        model_cnn = load_model('CNN/Save model2/CNN_Dataset_Model24_K3x3_IM180x180_B16_VS40_DO20_ACTsoftmax_OPTadam_E20.keras', compile=False)
+        model_cnn = load_model('CNN/Save model2/CNN_Dataset_Model24_K3x3_IM180x180_B16_VS40_DO20_ACTsoftmax_OPTadam_E20.keras', compile=True)
     else:
-        model_cnn = load_model('CNN/Save model2/CNN_Dataset 1v4_Model2_K3x3_IM180x180_B16_VS40_DO20_ACTsigmoid_OPTadam_E10.keras', compile=False)
+        model_cnn = load_model('CNN/Save model2/CNN_Dataset 1v4_Model2_K3x3_IM180x180_B16_VS40_DO20_ACTsigmoid_OPTadam_E10.keras', compile=True)
     
     encoder = CNN_Encoder(embedding_dim)
     decoder = RNN_Decoder(embedding_dim, units, vocab_size)
