@@ -184,12 +184,11 @@ def process_image(image_path, use_autoencoder, _autoencoder_model, classificatio
     
     return class_image, image_debruitee, original_img, result
 
-@st.cache_resource
+# @st.cache_resource
 def load_pytorch_model():
     processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
     model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
     return processor, model
-
 
 
 # Configuration de la barre latérale
@@ -199,6 +198,8 @@ with st.sidebar:
     classification_type = st.radio("Type de classification", ["Multiclasse", "Binaire"], index=0)
     use_autoencoder = st.toggle('Activer l\'autoencodeur', value=False)
     captioning_model = st.radio("Modèle d'étiquetage", ["PyTorch", "TensorFlow"], index=0)
+    if captioning_model == "TensorFlow":
+        max_length = st.slider("Longueur maximale de la description", min_value=10, max_value=50, value=35, step=1)
 
 
 # st.image("toutnum logo.png", use_column_width=True)
@@ -213,7 +214,7 @@ embedding_dim = 256
 units = 512
 top_k = 5000
 vocab_size = top_k + 1
-max_length = 47
+# max_length = 35
 attention_features_shape = 64
 img_height = 180
 img_width = 180
