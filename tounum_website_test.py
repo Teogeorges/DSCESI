@@ -170,7 +170,7 @@ def process_image(image_path, use_classification, use_captioning, use_autoencode
     original_img = PILImage.open(image_path)
     
     if use_captioning:
-        if captioning_model == "TensorFlow":
+        if captioning_model == "CNN GRU":
             tf_img = tf.keras.preprocessing.image.load_img(image_path, target_size=(299, 299))
             tf_img = tf.keras.preprocessing.image.img_to_array(tf_img)
             tf_img = tf.keras.applications.inception_v3.preprocess_input(tf_img)
@@ -202,13 +202,13 @@ with st.sidebar:
     use_autoencoder = st.toggle('Activer l\'autoencodeur', value=False)
     use_captioning = st.toggle('Activer le captioning', value=True)
     if use_captioning:
-        captioning_model = st.radio("Modèle d'étiquetage", ["PyTorch", "TensorFlow"], index=0)
-        if captioning_model == "TensorFlow":
+        captioning_model = st.radio("Modèle d'étiquetage", ["BLIP", "CNN GRU"], index=0)
+        if captioning_model == "CNN GRU":
             max_length = st.slider("Longueur maximale de la description", min_value=10, max_value=50, value=35, step=1)
 
 st.markdown("<h1 style='text-align: center; font-size: 5em;'>🤖 TouNum</h1>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align: center;'>L'intelligence artificielle au service de votre patrimoine numérique!</h2>", unsafe_allow_html=True)
-st.markdown("Made by: `HAIK`, `HUGO` et `TÉO`!", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; padding-bottom: 20px;'>L'intelligence artificielle au service de votre patrimoine numérique!</h2>", unsafe_allow_html=True)
+st.markdown(" **Made by:** `HAIK .K`, `HUGO .M` **et** `TÉO .G`.", unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("<h2 style='text-align: center;'> L'outil qui permet de classer vos images ainsi que de générer une description !</h2>", unsafe_allow_html=True)
 
@@ -233,7 +233,7 @@ if use_classification:
 image_files = os.listdir('Data pipeline')
 uploaded_files = st.file_uploader("Sélectionnez une ou plusieurs images", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
-if st.button('LOAD'):
+if st.button('CHARGER'):
     if uploaded_files:
         with st.spinner('Chargement en cours...'):
             for uploaded_file in uploaded_files:
@@ -252,7 +252,7 @@ if st.button('LOAD'):
                 ) 
                 
                 st.subheader(uploaded_file.name)
-                st.image(original_img, use_column_width='always', caption='Image originale')
+                st.image(original_img, use_column_width='always', caption=uploaded_file.name)
                 
                 if use_classification and class_image:
                     st.write(f'La catégorie de l\'image est : **{class_image}**.')
@@ -261,7 +261,7 @@ if st.button('LOAD'):
                     st.image(image_debruitee, use_column_width='always', caption='Image débruitée')
                 
                 if use_captioning and result:
-                    caption = result if captioning_model == "PyTorch" else ' '.join(result).capitalize() + '.'
+                    caption = result if captioning_model == "BLIP" else ' '.join(result).capitalize() + '.'
                     st.write(f"<u>Description de l'image</u> : {caption}", unsafe_allow_html=True)
                 
                 st.markdown("---")
@@ -269,4 +269,4 @@ if st.button('LOAD'):
                 os.unlink(temp_path)
         
     else:
-        st.warning('Veuillez sélectionner au moins une image avant de cliquer sur LOAD.')
+        st.warning('Veuillez sélectionner au moins une image avant de cliquer sur le bouton CHARGER.')
